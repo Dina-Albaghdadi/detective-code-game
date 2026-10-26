@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>كود المحقق</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0f1626;--bg2:#172238;--card:#1c2a45;--gold:#d4a84b;--gold2:#f0cf7a;--text:#f3efe6;--muted:#a9b3c7;--ok:#3fb27f;--warn:#f08a3c}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Tajawal',Tahoma,sans-serif;background:radial-gradient(circle at 20% 0%,#22345a,#0f1626 55%);color:var(--text);min-height:100vh;display:flex;justify-content:center;padding:10px}
+  #game{width:100%;max-width:900px}
+  .hud{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .who{display:flex;align-items:center;gap:10px}
+  .who img{width:52px;height:52px;border-radius:50%;border:3px solid var(--gold);object-fit:cover;background:var(--bg2)}
+  .who b{color:var(--gold2);font-size:1.05rem}
+  .who small{display:block;color:var(--muted);font-size:.8rem}
+  .counters{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{background:var(--bg2);border:1px solid #2c3d5f;border-radius:999px;padding:5px 11px;font-weight:700;font-size:.85rem}
+  .hbtns{display:flex;gap:6px}
+  .hbtns button{font-family:inherit;font-size:1.1rem;background:var(--bg2);color:var(--text);border:1px solid var(--gold);border-radius:10px;padding:6px 11px;cursor:pointer}
+  .obj{background:rgba(212,168,75,.12);border:1px solid var(--gold);border-radius:10px;padding:7px 12px;margin-bottom:8px;font-size:.9rem;line-height:1.6}
+  .stagewrap{position:relative}
+  canvas{width:100%;height:auto;display:block;border:3px solid var(--gold);border-radius:14px;background:#0a0f1c;touch-action:none}
+  #toast{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);border:1px solid var(--gold);padding:8px 14px;border-radius:999px;opacity:0;transition:.3s;pointer-events:none;font-size:.9rem;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+  #toast.show{opacity:1}
+  .pad{display:none;justify-content:space-between;align-items:center;margin-top:10px;direction:ltr}
+  @media (hover:none){.pad{display:flex}}
+  .dpad{display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,58px);gap:4px}
+  .dpad button,.act{font-family:inherit;font-size:1.4rem;background:var(--bg2);color:var(--gold2);border:2px solid var(--gold);border-radius:14px;touch-action:none;user-select:none}
+  .act{width:110px;height:84px;font-size:1.05rem;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1a1a}
+  .help{color:var(--muted);font-size:.8rem;margin-top:8px;text-align:center}
+  @media (hover:none){.help{display:none}}
+  #ov{position:fixed;inset:0;background:rgba(5,8,16,.84);display:none;align-items:center;justify-content:center;padding:14px;z-index:50}
+  #ov.show{display:flex}
+  .mbox{background:var(--card);border:2px solid var(--gold);border-radius:18px;padding:20px;max-width:580px;width:100%;max-height:92vh;overflow:auto;animation:rise .35s ease both;line-height:1.85}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .mbox h2{color:var(--gold2);margin-bottom:8px;font-size:1.25rem}
+  .mbox h3{color:var(--gold2);margin:10px 0 4px}
+  .btn{font-family:inherit;font-weight:800;font-size:1rem;border:none;border-radius:12px;padding:11px 20px;cursor:pointer;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1a1a;margin-top:10px}
+  .btn.ghost{background:transparent;color:var(--gold2);border:2px solid var(--gold)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .choices{display:grid;gap:8px;margin-top:10px}
+  .choice{font-family:inherit;font-size:1rem;color:var(--text);text-align:right;background:var(--bg2);border:2px solid #2c3d5f;border-radius:12px;padding:11px 13px;cursor:pointer;line-height:1.6;transition:.2s}
+  .choice:hover{border-color:var(--gold)}
+  .choice.on{border-color:var(--gold);background:rgba(212,168,75,.18)}
+  .speaker{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+  .speaker span.ic{font-size:2rem}
+  .speaker img{width:46px;height:46px;border-radius:50%;border:2px solid var(--gold);object-fit:cover}
+  .say{background:var(--bg2);border-radius:14px;padding:12px 14px}
+  .fb{margin-top:10px;padding:10px 12px;border-radius:12px;display:none;line-height:1.7}
+  .fb.show{display:block}.fb.ok{background:rgba(63,178,127,.15);border:1px solid var(--ok)}.fb.bad{background:rgba(240,138,60,.15);border:1px solid var(--warn)}
+  .list{display:grid;gap:7px;margin:8px 0}
+  .item{background:var(--bg2);border-right:4px solid var(--gold);border-radius:10px;padding:8px 11px;font-size:.95rem}
+  .item.no{opacity:.5;border-right-color:#555}
+  .mail{background:#fbf8ef;color:#222;border-radius:12px;padding:14px;line-height:2;font-size:.98rem}
+  .mail .r{border-bottom:1px solid #ddd;padding:2px 0}
+  .hot{cursor:pointer;border-bottom:2px dashed #b9a76a;padding:0 2px;border-radius:3px}
+  .hot:hover{background:#ffe9a8}
+  .hot.found{background:#ffc9c0;border-bottom:2px solid #d9432f}
+  .hot.nope{background:#d6efdf;border-bottom:2px solid var(--ok)}
+  .ref{font-size:.85rem;background:#eef3ff;color:#223;border-radius:8px;padding:6px 10px;margin-bottom:8px}
+  .center{text-align:center}
+  .stars{font-size:2.2rem;letter-spacing:6px;margin:6px 0}
+  .tag{display:inline-block;background:rgba(212,168,75,.15);border:1px solid var(--gold);color:var(--gold2);border-radius:999px;padding:5px 16px;font-weight:800;margin:4px 0}
+  .upl{font-size:.9rem;margin-top:8px}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div id="game">
+  <div class="hud">
+    <div class="who">
+      <img id="hudAv" alt="المحققة دينا">
+      <div><b>المحققة دينا</b><small id="roomName">ردهة المركز</small></div>
+    </div>
+    <div class="counters">
+      <span class="pill" id="cClue">🔎 0/6</span>
+      <span class="pill" id="cCard">📚 0/5</span>
+      <span class="pill" id="cScore">⭐ 100</span>
+    </div>
+    <div class="hbtns">
+      <button id="bNote" title="الدفتر">📓</button>
+      <button id="bMute" title="الصوت">🔊</button>
+    </div>
+  </div>
+  <div class="obj" id="obj"></div>
+  <div class="stagewrap"><canvas id="cv" width="800" height="500"></canvas><div id="toast"></div></div>
+  <div class="pad">
+    <div class="dpad">
+      <span></span><button data-k="up">▲</button><span></span>
+      <button data-k="left">◀</button><span></span><button data-k="right">▶</button>
+      <span></span><button data-k="down">▼</button><span></span>
+    </div>
+    <button class="act" id="bAct">🔍 افحصي</button>
+  </div>
+  <div class="help">الحركة: الأسهم أو W A S D · الفحص والحوار: E أو المسافة · الدفتر: N</div>
+</div>
+<div id="ov"></div>
+<input type="file" id="photo" accept="image/*" class="hidden">
+
+<script>
+/* ============ إعداد عام ============ */
+const W=800,H=500;
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+const TOTAL_CLUES=6,TOTAL_CARDS=5;
+
+/* الصورة: بدّليها برفع صورتك من شاشة البداية أو من الزر داخل الصورة الرمزية */
+const defaultAvatar='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#172238"/><circle cx="50" cy="38" r="19" fill="#d4a84b"/><path d="M12 100c0-26 17-40 38-40s38 14 38 40z" fill="#d4a84b"/></svg>');
+const avatarImg=new Image();let avatarReady=false;
+avatarImg.onload=()=>{avatarReady=true;$('hudAv').src=avatarImg.src;};
+avatarImg.src=defaultAvatar;
+$('hudAv').src=defaultAvatar;
+$('hudAv').style.cursor='pointer';
+$('hudAv').title='اضغطي لتغيير الصورة';
+$('hudAv').onclick=()=>$('photo').click();
+$('photo').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{avatarReady=false;avatarImg.src=r.result;toast('تم تغيير صورة المحققة ✔');};
+  r.readAsDataURL(f);
+});
+
+/* ============ بيانات اللعبة ============ */
+const CLUES={
+ c1:{t:'سجل الزوار فارغ',d:'لم يدخل المركز اليوم أي زائر غريب. من فعلها غالباً لم يأتِ بنفسه.'},
+ c2:{t:'الخزانة سليمة',d:'القفل سليم والنسخة الورقية في مكانها. لا اقتحام ولا سرقة، والملف المفقود إلكتروني.'},
+ c3:{t:'إجازة موظف الأرشيف موثقة',d:'جدول الإجازات يؤكد أنه في إجازة معتمدة منذ أسبوع، فلا علاقة له بما حدث.'},
+ c4:{t:'الحارس بلا صلاحية رقمية',d:'الحارس لا يملك أي صلاحية على الأنظمة ولا يعرف كلمات مرور أحد.'},
+ c5:{t:'رسالة تصيّد احتيالي',d:'اكتشفتِ كل علامات الخطر في الرسالة: عنوان مزيّف، استعجال وتخويف، تحية عامة، ورابط مشبوه.'},
+ c6:{t:'سلمى ضغطت الرابط',d:'سلمى أدخلت كلمة المرور في الصفحة المزيفة، ولم تكن قد فعّلت التحقق بخطوتين.'}
+};
+const CARDS={
+ k1:{t:'تكافؤ الفرص',d:'لكل امرأة الحق في التعليم والعمل على قدم المساواة مع غيرها، والتمييز بسبب الجنس مرفوض.'},
+ k2:{t:'الرضا الحر',d:'القرار الكبير مثل الزواج لا يصح إلا بموافقة حرة كاملة، بلا ضغط ولا إكراه، والسكوت ليس موافقة.'},
+ k3:{t:'الحماية من العنف',d:'عند التعرض للعنف: وثّقي ما حدث، وتواصلي مع جهة مختصة وموثوقة، ولا تنشري تفاصيل دون رضا صاحبة العلاقة.'},
+ k4:{t:'عقود العمل',d:'اقرئي العقد كاملاً، واسألي عمّا لا تفهمين، واطلبي نسخة موقّعة قبل أن توقّعي.'},
+ k5:{t:'الأمان الرقمي',d:'لا تعطي كلمة المرور عبر رسالة أبداً، لا تضغطي الروابط المستعجلة، وفعّلي التحقق بخطوتين.'}
+};
+const NPC_CLUE={guard:'c4',salma:'c6'};
+
+const ROOMS=[
+ {name:'ردهة المركز',c1:'#2b3756',c2:'#27324f',
+  doors:[{x:740,y:200,w:60,h:100,dir:'r',to:1,sx:70,sy:250,label:'الأرشيف'},
+         {x:350,y:440,w:100,h:60,dir:'d',to:2,sx:400,sy:85,label:'غرفة الحاسوب'}],
+  objs:[
+   {x:300,y:60,w:200,h:56,icons:['🗂️','📒','🗂️'],label:'سجل الزوار',act:'clue:c1',col:'#5a4630'},
+   {x:50,y:90,w:70,h:100,icons:['📌'],label:'لوحة الإعلانات',act:'card:k1',col:'#6b5a3a'},
+   {x:160,y:320,w:40,h:44,icons:['👮'],label:'الحارس',act:'npc:guard',npc:true},
+   {x:690,y:60,w:50,h:60,icons:['🪴'],decor:true},
+   {x:560,y:370,w:170,h:60,icons:['🛋️'],decor:true,col:'#4a3b5c'}
+  ]},
+ {name:'غرفة الأرشيف',c1:'#33304a',c2:'#2d2a42',
+  doors:[{x:0,y:200,w:60,h:100,dir:'l',to:0,sx:730,sy:250,label:'الردهة'}],
+  objs:[
+   {x:120,y:50,w:140,h:56,icons:['🗄️','🗄️'],decor:true,col:'#40485e'},
+   {x:260,y:50,w:140,h:56,icons:['🗄️','🔒'],label:'خزانة الوثائق',act:'clue:c2',col:'#4f5a78'},
+   {x:400,y:50,w:140,h:56,icons:['🗄️','🗄️'],decor:true,col:'#40485e'},
+   {x:610,y:50,w:110,h:90,icons:['📅'],label:'جدول الإجازات',act:'clue:c3',col:'#5d4a4a'},
+   {x:50,y:90,w:70,h:90,icons:['🖼️'],label:'ملصق توعوي',act:'card:k2',col:'#4a6355'},
+   {x:520,y:360,w:130,h:70,icons:['📦','📦'],decor:true,col:'#6b5130'},
+   {x:180,y:330,w:150,h:56,icons:['🪑','🖨️'],decor:true,col:'#46506a'}
+  ]},
+ {name:'غرفة الحاسوب',c1:'#2a3b4d',c2:'#25354a',
+  doors:[{x:350,y:0,w:100,h:60,dir:'u',to:0,sx:400,sy:420,label:'الردهة'}],
+  objs:[
+   {x:480,y:50,w:180,h:60,icons:['💻','🖱️'],label:'حاسوب الاستقبال',act:'mail',col:'#3d4f6a'},
+   {x:690,y:50,w:60,h:60,icons:['🖨️'],decor:true,col:'#46506a'},
+   {x:50,y:90,w:70,h:100,icons:['🛡️'],label:'ملصق: العنف',act:'card:k3',col:'#6a4a5a'},
+   {x:240,y:250,w:40,h:44,icons:['👩‍💼'],label:'سلمى',act:'npc:salma',npc:true},
+   {x:130,y:380,w:120,h:56,icons:['📄','🖊️'],label:'عقد عمل على الطاولة',act:'card:k4',col:'#5a5a3a'},
+   {x:700,y:380,w:50,h:60,icons:['🪴'],decor:true}
+  ]}
+];
+
+/* حوارات: الأسلوب المحترم يفتح المعلومات، واللوم يغلق الباب */
+const DIALOGS={
+ guard:{who:'الحارس',icon:'👮',done:{text:'تفضلي إن احتجتِ أي شيء يا محققة.',choices:[{t:'شكراً لك.',end:true}]},
+  start:{text:'صباح الخير يا محققة! والله ما مرّ أحد غريب من البوابة اليوم.',choices:[
+    {t:'هل لديك صلاحية على ملفات الحاسوب أو كلمات المرور؟',go:'access'},
+    {t:'أنت أول المشتبه بهم!',go:'offended',pen:5},
+    {t:'كيف حال الدوام اليوم؟',go:'chat'}]},
+  access:{text:'لا والله، شغلي على البوابة فقط. ما أعرف كلمة مرور أحد، ولا أملك أي صلاحية على النظام.',choices:[{t:'شكراً، هذا يفيدني كثيراً.',clue:'c4',end:true}]},
+  offended:{text:'أنا؟! عملت هنا سنوات دون مشاكل... لا تتهميني دون دليل.',choices:[{t:'أعتذر، لم أقصد. دعني أسأل بشكل أفضل.',go:'start'}]},
+  chat:{text:'الحمد لله، الصباح هادئ... وكنت أنتظر المتدربات للورشة.',choices:[{t:'حسناً، لديّ سؤال آخر.',go:'start'}]}},
+ salma:{who:'سلمى',icon:'👩‍💼',done:{text:'شكراً لأنك سمعتِني. سأفعّل كل وسائل الحماية.',choices:[{t:'أحسنتِ يا سلمى.',end:true}]},
+  start:{text:'أرجوكِ لا تظنّي بي سوءاً... لا أعرف ماذا حدث للملف، وأنا خائفة.',choices:[
+    {t:'اهدئي يا سلمى، أنا هنا لأفهم لا لألوم. احكي لي ما جرى.',go:'story'},
+    {t:'أنتِ السبب! كيف تضغطين على رابط مجهول؟',go:'shut',pen:5}]},
+  shut:{text:'لن أتكلم بعد الآن. أنتِ تتهمينني قبل أن تسمعيني.',choices:[{t:'كنت متسرعة، آسفة. لنبدأ من جديد.',go:'start'}]},
+  story:{text:'وصلتني رسالة تقول إن حسابي سيُغلق خلال ساعة. ارتبكت، ضغطت الرابط وكتبت كلمة المرور... ثم اختفى الملف.',choices:[
+    {t:'هل كان حسابك محمياً بالتحقق بخطوتين؟',go:'twofa'},
+    {t:'المهم ألا يتكرر الأمر.',go:'story'}]},
+  twofa:{text:'لا... كنت أراه مزعجاً فلم أفعّله. الآن فهمت أنه كان سيحميني حتى لو عرف أحدهم كلمة المرور.',choices:[{t:'لا بأس، الأخطاء تحدث ونتعلّم منها. شكراً لصراحتك.',clue:'c6',end:true}]}}
+};
+
+const SUSPECTS=[
+ {n:'موظف الأرشيف',d:'يملك مفاتيح الخزائن.',ok:false,why:'جدول الإجازات يثبت أنه في إجازة معتمدة، والخزانة سليمة أصلاً.'},
+ {n:'الحارس',d:'يتحكم بالبوابة والمفاتيح.',ok:false,why:'سجل الزوار فارغ، والحارس لا يملك أي صلاحية على الأنظمة الإلكترونية.'},
+ {n:'رسالة التصيّد الاحتيالية',d:'رسالة مزيّفة تنتحل عنوان المركز.',ok:true}
+];
+
+/* ============ الحالة ============ */
+let S;
+function freshState(){return {room:0,x:400,y:300,dir:1,clues:{},cards:{},score:100,paused:true,fade:0,muted:false,moving:false,near:null,over:false};}
+S=freshState();
+const keys={};
+function clearKeys(){for(const k in keys)keys[k]=0;}
+
+/* ============ أدوات ============ */
+let ac;
+function beep(f=660,d=.12){if(S.muted)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;g.gain.value=.06;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d);}catch(e){}}
+let toastT;
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);}
+const ov=$('ov');
+function openModal(html){ov.innerHTML='<div class="mbox">'+html+'</div>';ov.classList.add('show');S.paused=true;clearKeys();}
+function closeModal(){ov.classList.remove('show');ov.innerHTML='';if(!S.over)S.paused=false;clearKeys();updateHUD();}
+function nClues(){return Object.keys(S.clues).length;}
+function nCards(){return Object.keys(S.cards).length;}
+function updateHUD(){
+  $('cClue').textContent='🔎 '+nClues()+'/'+TOTAL_CLUES;
+  $('cCard').textContent='📚 '+nCards()+'/'+TOTAL_CARDS;
+  $('cScore').textContent='⭐ '+S.score;
+  $('roomName').textContent=ROOMS[S.room].name;
+  $('obj').textContent=nClues()<TOTAL_CLUES
+    ? '🎯 المهمة: تجوّلي في الغرف الثلاث، افحصي الأشياء وكلّمي الشخصيات لجمع الأدلة ('+nClues()+'/'+TOTAL_CLUES+'). ابحثي عن علامة ❗'
+    : '🎯 ممتاز! جمعتِ كل الأدلة. افتحي الدفتر 📓 واكشفي الفاعل.';
+}
+function penalty(n){S.score=Math.max(0,S.score-n);updateHUD();}
+
+/* ============ الفحص والأدلة والبطاقات ============ */
+function isDone(o){
+  if(!o.act)return false;const [k,v]=o.act.split(':');
+  if(k==='clue')return !!S.clues[v];
+  if(k==='card')return !!S.cards[v];
+  if(k==='npc')return !!S.clues[NPC_CLUE[v]];
+  if(k==='mail')return !!S.clues.c5;
+  return false;
+}
+function useObj(o){
+  const [k,v]=o.act.split(':');
+  if(k==='clue'){ if(S.clues[v]){toast('فحصتِ هذا من قبل ✔');return;} addClue(v); }
+  else if(k==='card'){ if(S.cards[v]){toast('جمعتِ هذه البطاقة من قبل ✔');return;} addCard(v); }
+  else if(k==='npc'){ startDialog(v,S.clues[NPC_CLUE[v]]?'done':'start'); }
+  else if(k==='mail'){ if(S.clues.c5){toast('حلّلتِ هذه الرسالة من قبل ✔');return;} openMail(); }
+}
+function addClue(id,after){
+  S.clues[id]=1;beep(784,.18);updateHUD();
+  openModal('<h2>🔎 دليل جديد</h2><div class="say"><b>'+CLUES[id].t+'</b><br>'+CLUES[id].d+'</div><div class="center"><button class="btn" id="go">متابعة التحقيق</button></div>');
+  $('go').onclick=()=>{closeModal();if(after)after();};
+}
+function addCard(id){
+  S.cards[id]=1;beep(990,.15);updateHUD();
+  openModal('<h2>📚 بطاقة معرفة: '+CARDS[id].t+'</h2><div class="say">'+CARDS[id].d+'</div><div class="center"><button class="btn" id="go">أضيفها لدفتري</button></div>');
+  $('go').onclick=closeModal;
+}
+
+/* ============ الحوار ============ */
+function startDialog(npc,node){
+  const D=DIALOGS[npc];const n=D[node];
+  let h='<div class="speaker"><span class="ic">'+D.icon+'</span><b>'+D.who+'</b></div><div class="say">'+n.text+'</div><div class="choices">';
+  n.choices.forEach((c,i)=>{h+='<button class="choice" data-i="'+i+'">'+c.t+'</button>';});
+  h+='</div>';
+  openModal(h);
+  ov.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{
+    const c=n.choices[+b.dataset.i];
+    if(c.pen){penalty(c.pen);toast('أسلوب اللوم أغلق باب الحوار (-'+c.pen+')');}
+    if(c.clue){closeModal();addClue(c.clue);return;}
+    if(c.end){closeModal();return;}
+    startDialog(npc,c.go);
+  });
+}
+
+/* ============ لعبة تحليل الرسالة ============ */
+function openMail(){
+  const flags={from:'الجزء الذي بعد @ لا يطابق عنوان المركز الرسمي.',urgent:'الاستعجال والتهديد أسلوب شائع لدفعك للتصرف دون تفكير.',greet:'تحية عامة بلا اسم: المرسل لا يعرفك فعلاً.',link:'الرابط يوحي بأنه للمركز لكن دومينه مختلف تماماً.'};
+  const found={};
+  openModal('<h2>💻 رسالة سلمى المشبوهة</h2><div class="ref">عنوان المركز الرسمي: info@womens-centre.org</div>'+
+   '<div class="mail">'+
+   '<div class="r"><b>من:</b> خدمة الدعم &lt;<span class="hot" data-f="from">support@womens-centre-help.net</span>&gt;</div>'+
+   '<div class="r"><b>إلى:</b> سلمى</div>'+
+   '<div class="r"><b>الموضوع:</b> <span class="hot" data-f="urgent">⚠️ عاجل: سيُغلق حسابك خلال ساعة!</span></div>'+
+   '<p><span class="hot" data-f="greet">عزيزي المستخدم</span>،</p>'+
+   '<p>رصدنا نشاطاً مشبوهاً في حسابك. اضغطي الرابط التالي وأدخلي كلمة المرور الآن وإلا سيُحذف حسابك نهائياً.</p>'+
+   '<p><span class="hot" data-f="link">http://womens-centre.verify-login.xyz/secure</span></p>'+
+   '<p><span class="hot" data-f="decoy">مع التحية، فريق الدعم</span></p></div>'+
+   '<div class="fb" id="fb"></div>'+
+   '<p style="margin-top:8px">اضغطي على كل جزء مشبوه. العلامات المكتشفة: <b id="cnt">0</b>/4</p>'+
+   '<div class="center"><button class="btn" id="go" disabled>حفظ الدليل</button> <button class="btn ghost" id="cls">إغلاق</button></div>');
+  ov.querySelectorAll('.hot').forEach(el=>el.onclick=()=>{
+    const f=el.dataset.f,fb=$('fb');
+    if(f==='decoy'){el.classList.add('nope');penalty(2);fb.className='fb show bad';fb.textContent='هذا جزء عادي في أي رسالة، فركّزي على ما يدعو للشك (-2).';return;}
+    if(found[f])return;
+    found[f]=1;el.classList.add('found');beep(520,.1);
+    fb.className='fb show ok';fb.textContent='🚩 '+flags[f];
+    $('cnt').textContent=Object.keys(found).length;
+    if(Object.keys(found).length===4)$('go').disabled=false;
+  });
+  $('cls').onclick=closeModal;
+  $('go').onclick=()=>{closeModal();S.cards.k5=1;addClue('c5');};
+}
+
+/* ============ الدفتر والاتهام ============ */
+function openNotebook(){
+  let h='<h2>📓 دفتر المحققة</h2><h3>الأدلة ('+nClues()+'/'+TOTAL_CLUES+')</h3><div class="list">';
+  Object.keys(CLUES).forEach(k=>{h+=S.clues[k]?'<div class="item"><b>'+CLUES[k].t+'</b><br>'+CLUES[k].d+'</div>':'<div class="item no">❓ دليل لم تكتشفيه بعد</div>';});
+  h+='</div><h3>بطاقات المعرفة ('+nCards()+'/'+TOTAL_CARDS+')</h3><div class="list">';
+  Object.keys(CARDS).forEach(k=>{h+=S.cards[k]?'<div class="item"><b>'+CARDS[k].t+'</b><br>'+CARDS[k].d+'</div>':'<div class="item no">📚 بطاقة مخفية في مكان ما</div>';});
+  h+='</div><div class="center"><button class="btn" id="acc" '+(nClues()<TOTAL_CLUES?'disabled':'')+'>🕵️ اكشفي الفاعل</button> <button class="btn ghost" id="cls">إغلاق</button></div>';
+  if(nClues()<TOTAL_CLUES)h+='<p style="color:var(--muted);font-size:.85rem;margin-top:6px" class="center">اجمعي الأدلة الستة أولاً لتفتح مرحلة الكشف.</p>';
+  openModal(h);
+  $('cls').onclick=closeModal;
+  if(nClues()>=TOTAL_CLUES)$('acc').onclick=openAccuse;
+}
+function openAccuse(){
+  let h='<h2>🕵️ من الفاعل؟</h2><p>راجعي أدلتك جيداً ثم اختاري.</p><div class="choices">';
+  SUSPECTS.forEach((s,i)=>{h+='<button class="choice" data-i="'+i+'"><b>'+s.n+'</b><br>'+s.d+'</button>';});
+  h+='</div><div class="fb" id="fb"></div><div class="center"><button class="btn ghost" id="cls">رجوع للدفتر</button></div>';
+  openModal(h);
+  $('cls').onclick=openNotebook;
+  ov.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{
+    const s=SUSPECTS[+b.dataset.i];
+    if(s.ok){beep(880,.25);openContain();return;}
+    penalty(10);b.disabled=true;b.style.opacity=.5;
+    const fb=$('fb');fb.className='fb show bad';fb.textContent='ليس هو. '+s.why+' (-10)';
+  });
+}
+
+/* ============ مرحلة الاحتواء ============ */
+function openContain(){
+  const acts=[
+   {t:'تغيير كلمة مرور سلمى فوراً',ok:true},
+   {t:'تفعيل التحقق بخطوتين لحسابها',ok:true},
+   {t:'إبلاغ إدارة المركز بالرسالة',ok:true},
+   {t:'تحذير الزميلات بالرسالة دون إرسال الرابط',ok:true},
+   {t:'الرد على المرسل ليتوقف',ok:false},
+   {t:'تمرير الرسالة بروابطها لكل الزميلات',ok:false}
+  ];
+  const sel={};
+  let h='<h2>🛡️ تم كشف الفاعل: التصيّد!</h2><p>الآن احمي المركز. اختاري الإجراءات الصحيحة ثم نفّذي الخطة.</p><div class="choices">';
+  acts.forEach((a,i)=>{h+='<button class="choice" data-i="'+i+'">'+a.t+'</button>';});
+  h+='</div><div class="fb" id="fb"></div><div class="center"><button class="btn" id="run">تنفيذ الخطة</button></div>';
+  openModal(h);
+  ov.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;sel[i]=!sel[i];b.classList.toggle('on',!!sel[i]);});
+  $('run').onclick=()=>{
+    const fb=$('fb');
+    const wrong=acts.some((a,i)=>sel[i]&&!a.ok);
+    const missing=acts.some((a,i)=>a.ok&&!sel[i]);
+    if(wrong){penalty(5);fb.className='fb show bad';fb.textContent='بعض الإجراءات خطرة: الرد على المحتال أو تمرير الرابط يزيد الضرر (-5). عدّلي اختيارك.';return;}
+    if(missing){fb.className='fb show bad';fb.textContent='ينقصك إجراء مهم. فكّري بالحماية والإبلاغ والتوعية.';return;}
+    finish();
+  };
+}
+function finish(){
+  S.over=true;beep(880,.3);
+  const stars=S.score>=85?3:S.score>=60?2:1;
+  const title=stars===3?'محققة خبيرة':stars===2?'محققة واعدة':'محققة مبتدئة';
+  let learn='';Object.keys(CARDS).forEach(k=>{if(S.cards[k])learn+='<div class="item"><b>'+CARDS[k].t+'</b>: '+CARDS[k].d+'</div>';});
+  if(!learn)learn='<div class="item no">لم تجمعي بطاقات معرفة. جرّبي استكشاف الغرف مرة أخرى.</div>';
+  openModal('<div class="center"><div class="tag">🎉 أُغلقت القضية!</div><div class="stars">'+'⭐'.repeat(stars)+'☆'.repeat(3-stars)+'</div><div class="tag">'+title+'</div><p>النقاط: <b>'+S.score+'</b> · بطاقات المعرفة: <b>'+nCards()+'/'+TOTAL_CARDS+'</b></p></div>'+
+   '<h3>ما تعلّمتِه</h3><div class="list">'+learn+'</div>'+
+   '<div class="center"><button class="btn" id="again">🔄 العبي مرة أخرى</button></div>'+
+   '<p style="color:var(--muted);font-size:.8rem;margin-top:8px" class="center">هذه اللعبة للتوعية العامة ولا تغني عن استشارة مختصّ.</p>');
+  $('again').onclick=restart;
+}
+function restart(){S=freshState();S.paused=false;S.over=false;ov.classList.remove('show');ov.innerHTML='';clearKeys();updateHUD();}
+
+/* ============ شاشة البداية ============ */
+function openIntro(){
+  openModal('<div class="center"><h2 style="font-size:1.7rem">🔍 كود المحقق</h2></div>'+
+   '<p>قبل ساعة من ورشة توعوية في مركز شؤون المرأة، اختفى ملف المشاركات الإلكتروني الذي يضم بيانات المتدربات.</p>'+
+   '<p>أنتِ <b>المحققة دينا</b>. تجوّلي في ردهة المركز وغرفة الأرشيف وغرفة الحاسوب، افحصي الأشياء، حاوري الشخصيات باحترام، واجمعي الأدلة لتكشفي الفاعل. وفي الزوايا بطاقات معرفة مخفية تساعدك على الفهم.</p>'+
+   '<div class="ref" style="margin-top:8px">الحركة: الأسهم أو W A S D (أو أزرار الشاشة) · الفحص: E أو زر 🔍 · الدفتر: N</div>'+
+   '<div class="center"><button class="btn ghost upl" id="up">📷 ارفعي صورتك لتكون وجه المحققة</button><br><button class="btn" id="start">ابدأي التحقيق</button></div>');
+  $('up').onclick=()=>$('photo').click();
+  $('start').onclick=()=>{closeModal();toast('ابدأي بالتجوّل: ابحثي عن علامة ❗');};
+}
+
+/* ============ الحركة والتصادم ============ */
+function circleRect(cx,cy,r,o){
+  const nx=Math.max(o.x,Math.min(cx,o.x+o.w)),ny=Math.max(o.y,Math.min(cy,o.y+o.h));
+  return (cx-nx)*(cx-nx)+(cy-ny)*(cy-ny)<r*r;
+}
+function walkable(x,y){
+  const r=ROOMS[S.room];
+  let ok=x>34&&x<766&&y>34&&y<466;
+  if(!ok)for(const d of r.doors){if(x>d.x&&x<d.x+d.w&&y>d.y&&y<d.y+d.h)ok=true;}
+  if(!ok)return false;
+  for(const o of r.objs){if(!o.decor||o.decor){if(circleRect(x,y,12,o))return false;}}
+  return true;
+}
+function nearest(){
+  const r=ROOMS[S.room];let best=null,bd=40;
+  for(const o of r.objs){
+    if(!o.act)continue;
+    const nx=Math.max(o.x,Math.min(S.x,o.x+o.w)),ny=Math.max(o.y,Math.min(S.y,o.y+o.h));
+    const d=Math.hypot(S.x-nx,S.y-ny);
+    if(d<bd){bd=d;best=o;}
+  }
+  return best;
+}
+function changeRoom(d){
+  S.room=d.to;S.x=d.sx;S.y=d.sy;S.fade=1;beep(330,.1);updateHUD();
+}
+function update(dt){
+  if(S.paused)return;
+  let dx=0,dy=0;
+  if(keys.left)dx-=1;if(keys.right)dx+=1;if(keys.up)dy-=1;if(keys.down)dy+=1;
+  S.moving=!!(dx||dy);
+  if(S.moving){
+    const l=Math.hypot(dx,dy);dx/=l;dy/=l;
+    if(dx)S.dir=dx>0?1:-1;
+    const sp=3.1*dt;
+    if(walkable(S.x+dx*sp,S.y))S.x+=dx*sp;
+    if(walkable(S.x,S.y+dy*sp))S.y+=dy*sp;
+    const r=ROOMS[S.room];
+    for(const d of r.doors){
+      if((d.dir==='r'&&S.x>778)||(d.dir==='l'&&S.x<22)||(d.dir==='d'&&S.y>478)||(d.dir==='u'&&S.y<22)){changeRoom(d);break;}
+    }
+  }
+  S.near=nearest();
+  if(S.fade>0)S.fade=Math.max(0,S.fade-0.04*dt);
+}
+
+/* ============ الرسم ============ */
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function drawRoom(){
+  const r=ROOMS[S.room];
+  ctx.fillStyle='#161f36';ctx.fillRect(0,0,W,H);
+  for(let ty=20;ty<480;ty+=40)for(let tx=20;tx<780;tx+=40){ctx.fillStyle=((tx+ty)/40)%2?r.c1:r.c2;ctx.fillRect(tx,ty,40,40);}
+  if(S.room===0){ctx.fillStyle='rgba(212,168,75,.12)';ctx.beginPath();ctx.ellipse(400,260,170,90,0,0,Math.PI*2);ctx.fill();}
+  ctx.strokeStyle='#d4a84b';ctx.lineWidth=4;ctx.strokeRect(20,20,760,460);
+  ctx.font='700 13px Tajawal,Tahoma,sans-serif';ctx.textAlign='center';ctx.direction='rtl';
+  for(const d of r.doors){
+    ctx.fillStyle='#161f36';
+    let bx,by,bw,bh;
+    if(d.dir==='r'){bx=762;by=205;bw=38;bh=90;}
+    if(d.dir==='l'){bx=0;by=205;bw=38;bh=90;}
+    if(d.dir==='d'){bx=355;by=462;bw=90;bh=38;}
+    if(d.dir==='u'){bx=355;by=0;bw=90;bh=38;}
+    ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle='rgba(212,168,75,.28)';ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle='#f0cf7a';ctx.fillText('🚪 '+d.label,bx+bw/2,by+bh/2+4);
+  }
+}
+function drawObjs(t){
+  const r=ROOMS[S.room];
+  for(const o of r.objs){
+    if(o.npc){
+      ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(o.x+o.w/2,o.y+o.h-2,16,5,0,0,Math.PI*2);ctx.fill();
+      ctx.font='38px serif';ctx.textAlign='center';ctx.fillText(o.icons[0],o.x+o.w/2,o.y+o.h-8);
+      ctx.font='700 12px Tajawal,Tahoma,sans-serif';ctx.fillStyle='#f0cf7a';ctx.fillText(o.label,o.x+o.w/2,o.y+o.h+12);
+    } else {
+      ctx.fillStyle=o.col||'#3a4663';rr(o.x,o.y,o.w,o.h,8);ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=2;ctx.stroke();
+      const fs=Math.min(o.h*0.62,34);ctx.font=fs+'px serif';ctx.textAlign='center';ctx.fillStyle='#fff';
+      const n=o.icons.length;
+      o.icons.forEach((ic,i)=>ctx.fillText(ic,o.x+o.w*(i+0.5)/n,o.y+o.h/2+fs*0.35));
+    }
+    if(o.act){
+      const done=isDone(o),cx=o.x+o.w/2,top=o.y-(o.npc?18:6);
+      ctx.font='18px serif';ctx.textAlign='center';
+      if(done)ctx.fillText('✅',cx,top);
+      else{const b=Math.sin(t/220+o.x)*3;ctx.fillText(o.npc?'💬':'❗',cx,top+b);}
+    }
+  }
+}
+function drawPlayer(t){
+  const bob=S.moving?Math.sin(t/80)*2.2:0,x=S.x,y=S.y+bob;
+  ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(S.x,S.y+24,14,5,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#8a6a2a';rr(x-13,y+2,26,26,8);ctx.fill();
+  ctx.fillStyle='#d4a84b';ctx.fillRect(x-13,y+14,26,4);
+  ctx.save();ctx.beginPath();ctx.arc(x,y-8,17,0,Math.PI*2);ctx.clip();
+  if(avatarReady&&avatarImg.naturalWidth){
+    const iw=avatarImg.naturalWidth,ih=avatarImg.naturalHeight,s=Math.min(iw,ih);
+    ctx.drawImage(avatarImg,(iw-s)/2,(ih-s)*0.15,s,s,x-17,y-25,34,34);
+  } else {ctx.fillStyle='#d4a84b';ctx.fillRect(x-17,y-25,34,34);}
+  ctx.restore();
+  ctx.strokeStyle='#d4a84b';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y-8,17,0,Math.PI*2);ctx.stroke();
+  ctx.font='20px serif';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText('🔍',x+S.dir*20,y+16);
+}
+function drawPrompt(){
+  if(!S.near||S.paused)return;
+  const touch=window.matchMedia('(hover:none)').matches;
+  const msg=(S.near.npc?'تحدثي مع: ':'افحصي: ')+S.near.label+(touch?'':'  [E]');
+  ctx.font='700 15px Tajawal,Tahoma,sans-serif';ctx.textAlign='center';ctx.direction='rtl';
+  const w=ctx.measureText(msg).width+30;
+  ctx.fillStyle='rgba(10,15,28,.88)';rr(W/2-w/2,H-62,w,34,17);ctx.fill();
+  ctx.strokeStyle='#d4a84b';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#f0cf7a';ctx.fillText(msg,W/2,H-40);
+}
+function draw(t){
+  drawRoom();drawObjs(t);drawPlayer(t);drawPrompt();
+  if(S.fade>0){ctx.fillStyle='rgba(5,8,16,'+S.fade+')';ctx.fillRect(0,0,W,H);}
+}
+let last=performance.now();
+function loop(ts){const dt=Math.min(40,ts-last)/16.67;last=ts;update(dt);draw(ts);requestAnimationFrame(loop);}
+
+/* ============ الإدخال ============ */
+const MAP={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down',A:'left',D:'right',W:'up',S:'down'};
+function interact(){if(!S.paused&&S.near)useObj(S.near);}
+addEventListener('keydown',e=>{
+  if(MAP[e.key]){keys[MAP[e.key]]=1;e.preventDefault();return;}
+  if(e.key==='e'||e.key==='E'||e.key===' '||e.key==='Enter'){if(!S.paused){e.preventDefault();interact();}}
+  if((e.key==='n'||e.key==='N')&&!S.paused)openNotebook();
+  if(e.key==='Escape'&&ov.classList.contains('show')&&!S.over&&!ov.querySelector('#start'))closeModal();
+});
+addEventListener('keyup',e=>{if(MAP[e.key])keys[MAP[e.key]]=0;});
+addEventListener('blur',clearKeys);
+document.querySelectorAll('.dpad button').forEach(b=>{
+  const k=b.dataset.k;
+  b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=1;});
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>{keys[k]=0;}));
+});
+$('bAct').addEventListener('pointerdown',e=>{e.preventDefault();interact();});
+$('bNote').onclick=()=>{if(!S.paused)openNotebook();};
+$('bMute').onclick=()=>{S.muted=!S.muted;$('bMute').textContent=S.muted?'🔇':'🔊';};
+
+/* ============ البدء ============ */
+updateHUD();
+openIntro();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
