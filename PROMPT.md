@@ -2,7 +2,7 @@
 
 إعداد: دينا البغدادي — مركز شؤون المرأة
 
-> The original prompt used to generate the game, written with the **CTCO** framework (Context · Task · Constraints · Output). See the [README](./README.md#how-it-was-built--the-ctco-prompt) for the breakdown.
+> The original prompt used to generate the game, written with the **CTCO** framework (Context · Task · Constraints · Output). See the [README](./README.md#how-it-was-built-the-ctco-prompt) for the breakdown.
 
 ---
 
